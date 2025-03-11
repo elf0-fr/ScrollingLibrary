@@ -13,6 +13,9 @@ public struct Carousel<Content: View>: View {
     var content: Content
     
     @State private var viewModel = CarouselViewModel()
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.autoScrollingEnabled) private var autoScrollingEnabled
+    @Environment(\.autoScrollPauseDuration) private var autoScrollPauseDuration
 
     public init(@ViewBuilder content: @escaping () -> Content) {
         self.content = content()
@@ -41,15 +44,26 @@ public struct Carousel<Content: View>: View {
                         
                         // start at the first item of the second loop.
                         viewModel.internalScrollPosition = viewModel.subviewsCount
+                        
+                        // auto scrolling settings
+                        viewModel.isAutoScrollingEnabled = autoScrollingEnabled
+                        viewModel.autoScrollPauseDuration = autoScrollPauseDuration
+                    }
+                    .onDisappear {
+                        viewModel.autoScrollTask?.cancel()
                     }
             }
         }
         .scrollPosition(id: $viewModel.internalScrollPosition)
+        .scrollDisabled(!viewModel.isDragActive)
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.always)
-        .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
         .scrollTargetBehavior(.paging)
-        .scrollDisabled(!viewModel.isDragActive)
+        .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
+        .onChange(of: autoScrollingEnabled) { viewModel.onChangeOfAutoScrolling(isEnable: $1)}
+        .onChange(of: autoScrollPauseDuration) { viewModel.onChangeOfAutoScrolling(pauseDuration: $1) }
+        .onChange(of: viewModel.isAutoScrollingAllowed) { viewModel.onChangeOfAutoScrolling(isAllowed: $1) }
+        .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
 #if DEBUG
         .overlay(alignment: .top) {
             Text("scrollPosition: \(viewModel.internalScrollPosition ?? -1)")
@@ -68,6 +82,11 @@ class CarouselViewModel {
     var internalScrollPosition: Int?
     var isDragActive: Bool = true
     
+    var isAutoScrollingEnabled: Bool = true
+    var isAutoScrollingAllowed: Bool = false
+    var autoScrollPauseDuration: Double = 3
+    var autoScrollTask: Task<(), Never>?
+    
     var scrollPosition: Int {
         get {
             (internalScrollPosition ?? 0) % subviewsCount
@@ -85,58 +104,126 @@ class CarouselViewModel {
         switch newPhase {
         case .idle:
             isDragActive = true
-            updateScrollPositionToPerformInfiniteScrollingTowardLeft()
-            updateScrollPositionToPerformInfiniteScrollingTowardRight()
+            isAutoScrollingAllowed = true
+            updateScrollPositionToPerformInfiniteScrolling()
             
         case .decelerating:
             isDragActive = false
+            
+        case .interacting:
+            isAutoScrollingAllowed = false
             
         default:
             break
         }
     }
     
-    private func updateScrollPositionToPerformInfiniteScrollingTowardLeft() {
-        guard let internalScrollPosition else { return }
-        
-        if internalScrollPosition < subviewsCount {
-            self.internalScrollPosition = internalScrollPosition + self.subviewsCount
+    private func updateScrollPositionToPerformInfiniteScrolling() {
+        if let internalScrollPosition {
+            if internalScrollPosition < subviewsCount {
+                self.internalScrollPosition = internalScrollPosition + subviewsCount
+            } else if internalScrollPosition >= subviewsCount * 2 {
+                self.internalScrollPosition = internalScrollPosition - subviewsCount
+            }
+        } else {
+            self.internalScrollPosition = subviewsCount
         }
     }
     
-    private func updateScrollPositionToPerformInfiniteScrollingTowardRight() {
-        guard let internalScrollPosition else { return }
+    func onChangeOfAutoScrolling(
+        isEnable: Bool? = nil,
+        isAllowed: Bool? = nil,
+        pauseDuration: Double? = nil
+    ) {
+        if let isEnable {
+            isAutoScrollingEnabled = isEnable
+        }
+        if let isAllowed {
+            isAutoScrollingAllowed = isAllowed
+        }
+        if let pauseDuration {
+            autoScrollPauseDuration = pauseDuration
+        }
         
-        if internalScrollPosition >= subviewsCount * 2 {
-            self.internalScrollPosition = internalScrollPosition - self.subviewsCount
+        startAutoScrolling()
+    }
+    
+    private func startAutoScrolling() {
+        if isAutoScrollingAllowed && isAutoScrollingEnabled {
+            if let autoScrollTask, !autoScrollTask.isCancelled {
+                return
+            }
+            
+            autoScrollTask = Task(priority: .high, operation: autoScroll)
+        } else {
+            autoScrollTask?.cancel()
+        }
+    }
+    
+    private func autoScroll() async {
+        while true {
+            try? await Task.sleep(for: .seconds(autoScrollPauseDuration))
+            
+            if Task.isCancelled {
+                return
+            }
+            
+            withAnimation {
+                self.internalScrollPosition = (internalScrollPosition ?? subviewsCount - 1) + 1
+            }
+        }
+    }
+    
+    func onChangeOfScenePhase(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .active:
+            startAutoScrolling()
+            
+        case .inactive, .background:
+            autoScrollTask?.cancel()
+            
+        @unknown default:
+            break
         }
     }
 }
 
 #Preview {
 //        @Previewable @State var scrollPosition: Int?
+    @Previewable @State var autoScrollingEnabled: Bool = false
+    @Previewable @State var autoScrollPauseDuration: Double = 3
+    
     let colors = [Color.red, Color.blue, Color.green, Color.yellow]
     
-    Carousel {
-        let with: CGFloat = 250
-        let height: CGFloat = 350
-        let widthDiff: CGFloat = 300 - with
-        
-        ForEach(colors.indices, id: \.self) { index in
-            let color = colors[index]
-            
-            Text("\(color)\nindex: \(index)")
-                .foregroundStyle(.white)
-                .frame(width: with, height: height)
-                .background {
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(color)
-                }
-                .padding(.horizontal, widthDiff / 2)
+    VStack {
+        GroupBox {
+            Toggle("Enable auto scrolling", isOn: $autoScrollingEnabled)
+            Stepper("Pause Duration: \(autoScrollPauseDuration.formatted())", value: $autoScrollPauseDuration, in: 1...5)
         }
-    }
-    .frame(width: 300)
-    .background {
-        RoundedRectangle(cornerRadius: 25)
+        
+        Carousel {
+            let with: CGFloat = 250
+            let height: CGFloat = 350
+            let widthDiff: CGFloat = 300 - with
+            
+            ForEach(colors.indices, id: \.self) { index in
+                let color = colors[index]
+                
+                Text("\(color)\nindex: \(index)")
+                    .foregroundStyle(.white)
+                    .frame(width: with, height: height)
+                    .background {
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(color)
+                    }
+                    .padding(.horizontal, widthDiff / 2)
+            }
+        }
+        .autoScrollingEnabled(autoScrollingEnabled)
+        .autoScrollPauseDuration(autoScrollPauseDuration)
+        .frame(width: 300)
+        .background {
+            RoundedRectangle(cornerRadius: 25)
+        }
     }
 }
