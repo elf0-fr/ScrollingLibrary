@@ -30,3 +30,26 @@ extension View {
         environment(\.autoScrollPauseDuration, duration)
     }
 }
+
+// MARK: - auto Scroll Direction
+
+extension EnvironmentValues {
+    @Entry var autoScrollDirection: LayoutDirection = .leftToRight
+}
+
+extension View {
+    public func autoScrollDirection(_ direction: LayoutDirection) -> some View {
+        environment(\.autoScrollDirection, direction)
+    }
+}
+
+extension LayoutDirection: @retroactive CustomStringConvertible {
+    public var description: String {
+        switch self {
+            case .leftToRight: return "left to right"
+            case .rightToLeft: return "right to left"
+            @unknown default:
+            fatalError()
+        }
+    }
+}

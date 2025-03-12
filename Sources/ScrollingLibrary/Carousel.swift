@@ -16,6 +16,7 @@ public struct Carousel<Content: View>: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.autoScrollingEnabled) private var autoScrollingEnabled
     @Environment(\.autoScrollPauseDuration) private var autoScrollPauseDuration
+    @Environment(\.autoScrollDirection) private var autoScrollDirection
 
     public init(@ViewBuilder content: @escaping () -> Content) {
         self.content = content()
@@ -62,6 +63,7 @@ public struct Carousel<Content: View>: View {
         .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
         .onChange(of: autoScrollingEnabled) { viewModel.onChangeOfAutoScrolling(isEnable: $1)}
         .onChange(of: autoScrollPauseDuration) { viewModel.onChangeOfAutoScrolling(pauseDuration: $1) }
+        .onChange(of: autoScrollDirection) { viewModel.onChangeOfAutoScrolling(direction: $1) }
         .onChange(of: viewModel.isAutoScrollingAllowed) { viewModel.onChangeOfAutoScrolling(isAllowed: $1) }
         .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
 #if DEBUG
@@ -85,6 +87,7 @@ class CarouselViewModel {
     var isAutoScrollingEnabled: Bool = true
     var isAutoScrollingAllowed: Bool = false
     var autoScrollPauseDuration: Double = 3
+    var autoScrollDirection: LayoutDirection = .leftToRight
     var autoScrollTask: Task<(), Never>?
     
     var scrollPosition: Int {
@@ -133,7 +136,8 @@ class CarouselViewModel {
     func onChangeOfAutoScrolling(
         isEnable: Bool? = nil,
         isAllowed: Bool? = nil,
-        pauseDuration: Double? = nil
+        pauseDuration: Double? = nil,
+        direction: LayoutDirection? = nil
     ) {
         if let isEnable {
             isAutoScrollingEnabled = isEnable
@@ -143,6 +147,9 @@ class CarouselViewModel {
         }
         if let pauseDuration {
             autoScrollPauseDuration = pauseDuration
+        }
+        if let direction {
+            autoScrollDirection = direction
         }
         
         startAutoScrolling()
@@ -169,7 +176,11 @@ class CarouselViewModel {
             }
             
             withAnimation {
-                self.internalScrollPosition = (internalScrollPosition ?? subviewsCount - 1) + 1
+                if autoScrollDirection == .leftToRight {
+                    self.internalScrollPosition = (internalScrollPosition ?? subviewsCount - 1) + 1
+                } else {
+                    self.internalScrollPosition = (internalScrollPosition ?? subviewsCount + 1) - 1
+                }
             }
         }
     }
@@ -191,6 +202,7 @@ class CarouselViewModel {
 #Preview {
 //        @Previewable @State var scrollPosition: Int?
     @Previewable @State var autoScrollingEnabled: Bool = false
+    @Previewable @State var rightToLeft: Bool = false
     @Previewable @State var autoScrollPauseDuration: Double = 3
     
     let colors = [Color.red, Color.blue, Color.green, Color.yellow]
@@ -198,6 +210,7 @@ class CarouselViewModel {
     VStack {
         GroupBox {
             Toggle("Enable auto scrolling", isOn: $autoScrollingEnabled)
+            Toggle("\(rightToLeft ? "Right to Left" : "Left to Right")", isOn: $rightToLeft)
             Stepper("Pause Duration: \(autoScrollPauseDuration.formatted())", value: $autoScrollPauseDuration, in: 1...5)
         }
         
@@ -221,6 +234,7 @@ class CarouselViewModel {
         }
         .autoScrollingEnabled(autoScrollingEnabled)
         .autoScrollPauseDuration(autoScrollPauseDuration)
+        .autoScrollDirection(rightToLeft ? .rightToLeft : .leftToRight)
         .frame(width: 300)
         .background {
             RoundedRectangle(cornerRadius: 25)

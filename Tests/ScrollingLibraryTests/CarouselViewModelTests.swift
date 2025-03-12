@@ -7,6 +7,7 @@
 
 
 import Testing
+import SwiftUI
 @testable import ScrollingLibrary
 
 struct ScrollPosition: CustomTestStringConvertible {
@@ -22,9 +23,10 @@ struct AutoScrolling: CustomTestStringConvertible {
     let isEnabled: Bool?
     let isAllowed: Bool?
     let pauseDuration: Double?
+    let direction: LayoutDirection?
     
     var testDescription: String {
-        "Auto scrolling \((isEnabled ?? false) ? "enabled" : "disabled"), \((isAllowed ?? false) ? "allowed" : "not allowed"), pause duration: \(pauseDuration?.description ?? "nil")"
+        "Auto scrolling \((isEnabled ?? false) ? "enabled" : "disabled"), \((isAllowed ?? false) ? "allowed" : "not allowed"), pause duration: \(pauseDuration?.description ?? "nil"), direction: \(direction?.description ?? "nil")"
     }
 }
 
@@ -130,23 +132,26 @@ struct AutoScrolling: CustomTestStringConvertible {
     }
     
     @Test("Auto scrolling", arguments: [
-        AutoScrolling(isEnabled: true, isAllowed: true, pauseDuration: 0.1),
-        AutoScrolling(isEnabled: false, isAllowed: false, pauseDuration: 0.3),
+        AutoScrolling(isEnabled: true, isAllowed: true, pauseDuration: 0.1, direction: .leftToRight),
+        AutoScrolling(isEnabled: false, isAllowed: false, pauseDuration: 0.3, direction: .rightToLeft),
     ])
     func onChangeOfAutoScrolling(autoScrolling: AutoScrolling) {
         viewModel.isAutoScrollingEnabled = Bool.random()
         viewModel.isAutoScrollingAllowed = Bool.random()
         viewModel.autoScrollPauseDuration = Double.random(in: 0...1)
+        viewModel.autoScrollDirection = .allCases.randomElement()!
         
         viewModel.onChangeOfAutoScrolling(
             isEnable: autoScrolling.isEnabled,
             isAllowed: autoScrolling.isAllowed,
-            pauseDuration: autoScrolling.pauseDuration
+            pauseDuration: autoScrolling.pauseDuration,
+            direction: autoScrolling.direction
         )
         
         #expect(viewModel.isAutoScrollingEnabled == autoScrolling.isEnabled)
         #expect(viewModel.isAutoScrollingEnabled == autoScrolling.isAllowed)
         #expect(viewModel.autoScrollPauseDuration == autoScrolling.pauseDuration)
+        #expect(viewModel.autoScrollDirection == autoScrolling.direction)
     }
     
     @Test("Scene phase change") func onChangeOfScenePhase() throws {
