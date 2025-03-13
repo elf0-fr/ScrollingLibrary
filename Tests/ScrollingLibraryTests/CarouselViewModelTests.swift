@@ -39,38 +39,32 @@ struct AutoScrolling: CustomTestStringConvertible {
         #expect(CarouselViewModel.getId(loopIndex: 2, index: 3) == 11)
     }
     
-    @Test("Get scroll position [0, subviewsCount[", arguments: [
-        ScrollPosition(initialPosition: 4, positionAfterComputations: 4),
-        ScrollPosition(initialPosition: 5, positionAfterComputations: 0),
-        ScrollPosition(initialPosition: 6, positionAfterComputations: 1),
-        ScrollPosition(initialPosition: 7, positionAfterComputations: 2),
-        ScrollPosition(initialPosition: 8, positionAfterComputations: 3),
-        ScrollPosition(initialPosition: 9, positionAfterComputations: 4),
-        ScrollPosition(initialPosition: 10, positionAfterComputations: 0),
-        ScrollPosition(initialPosition: nil, positionAfterComputations: 0),
-    ])
-    func getScrollPosition(scrollPosition: ScrollPosition) {
-        viewModel.subviewsCount = 5
+    @Test("Set the scroll position", arguments: zip([
+        4, 5, 6, 7, 6
+    ], [
+        4, 4, 4, 4, 0
+    ]))
+    func setScrollPosition(position: Int, subviewsCount: Int) {
+        viewModel.subviewsCount = subviewsCount
+        viewModel.scrollPosition = Int.random(in: 1...10)
+        let randomPageIndex: Int? = Int.random(in: 1...10)
+        var pageIndexValue: Int? = randomPageIndex
         
-        viewModel.internalScrollPosition = scrollPosition.initialPosition
+        viewModel.setScrollPosition(
+            position,
+            pageIndex: Binding {
+                pageIndexValue
+            } set: {
+                pageIndexValue = $0
+            }
+        )
         
-        #expect(viewModel.scrollPosition == scrollPosition.positionAfterComputations)
-    }
-    
-    @Test("Set scroll position [0, subviewsCount[", arguments: [
-        ScrollPosition(initialPosition: 0, positionAfterComputations: 5),
-        ScrollPosition(initialPosition: 1, positionAfterComputations: 6),
-        ScrollPosition(initialPosition: 2, positionAfterComputations: 7),
-        ScrollPosition(initialPosition: 3, positionAfterComputations: 8),
-        ScrollPosition(initialPosition: 4, positionAfterComputations: 9),
-    ])
-    func setScrollPosition(scrollPosition: ScrollPosition) {
-        viewModel.subviewsCount = 5
-        viewModel.internalScrollPosition = Int.random(in: 5...9)
-        
-        viewModel.scrollPosition = scrollPosition.initialPosition!
-        
-        #expect(viewModel.internalScrollPosition == scrollPosition.positionAfterComputations)
+        #expect(viewModel.scrollPosition == position)
+        if subviewsCount != 0 {
+            #expect(pageIndexValue == position % subviewsCount)
+        } else {
+            #expect(pageIndexValue == randomPageIndex)
+        }
     }
     
     @MainActor struct OnScrollPhaseChange {
@@ -98,14 +92,14 @@ struct AutoScrolling: CustomTestStringConvertible {
             viewModel.isDragActive = Bool.random()
             viewModel.isAutoScrollingEnabled = isAutoScrollingEnabled
             viewModel.isAutoScrollingAllowed = Bool.random()
-            viewModel.internalScrollPosition = scrollPosition.initialPosition
+            viewModel.scrollPosition = scrollPosition.initialPosition
             
             viewModel.onScrollPhaseChange(.idle)
             
             #expect(viewModel.isDragActive)
             #expect(viewModel.isAutoScrollingEnabled == isAutoScrollingEnabled)
             #expect(viewModel.isAutoScrollingAllowed)
-            #expect(viewModel.internalScrollPosition ==  scrollPosition.positionAfterComputations)
+            #expect(viewModel.scrollPosition ==  scrollPosition.positionAfterComputations)
         }
         
         @Test("Scroll phase change to decelerating", arguments: [

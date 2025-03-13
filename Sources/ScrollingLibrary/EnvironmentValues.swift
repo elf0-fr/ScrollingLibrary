@@ -7,6 +7,18 @@
 
 import SwiftUI
 
+// MARK: - Page Index (scroll position)
+
+extension EnvironmentValues {
+    @Entry var pageIndex: Binding<Int?> = .constant(nil)
+}
+
+extension View {
+    public func pageIndex(_ index: Binding<Int?>) -> some View {
+        environment(\.pageIndex, index)
+    }
+}
+
 // MARK: - auto Scrolling Enabled
 
 extension EnvironmentValues {

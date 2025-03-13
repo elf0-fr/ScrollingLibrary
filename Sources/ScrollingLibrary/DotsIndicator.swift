@@ -58,3 +58,16 @@ class DotsIndicatorViewModel {
                 .fill(.linearGradient(colors: [.blue, .red], startPoint: .leading, endPoint: .trailing))
         }
 }
+
+#Preview {
+    @Previewable @State var scrollPosition: Int? = 5
+    ScrollView {
+        Text("Hello, World! \(scrollPosition ?? 0)")
+            .foregroundStyle(.white)
+            .padding()
+            .background {
+                RoundedRectangle(cornerRadius: 25)
+            }
+    }
+    .scrollPosition(id: $scrollPosition)
+}

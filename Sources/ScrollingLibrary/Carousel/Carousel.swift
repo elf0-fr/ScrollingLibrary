@@ -9,14 +9,24 @@ import SwiftUI
 
 public struct Carousel<Content: View>: View {
         
-//    @Binding var scrollPosition: Int?
     var content: Content
     
     @State private var viewModel = CarouselViewModel()
+    
     @Environment(\.scenePhase) private var scenePhase
+        
     @Environment(\.autoScrollingEnabled) private var autoScrollingEnabled
     @Environment(\.autoScrollPauseDuration) private var autoScrollPauseDuration
     @Environment(\.autoScrollDirection) private var autoScrollDirection
+    
+    @Environment(\.pageIndex) private var pageIndex
+    private var scrollPosition: Binding<Int?> {
+        Binding {
+            viewModel.scrollPosition
+        } set: { newValue in
+            viewModel.setScrollPosition(newValue, pageIndex: pageIndex)
+        }
+    }
 
     public init(@ViewBuilder content: @escaping () -> Content) {
         self.content = content()
@@ -44,7 +54,7 @@ public struct Carousel<Content: View>: View {
                         viewModel.subviewsCount = subviews.count
                         
                         // start at the first item of the second loop.
-                        viewModel.internalScrollPosition = viewModel.subviewsCount
+                        scrollPosition.wrappedValue = (pageIndex.wrappedValue ?? 0) + viewModel.subviewsCount
                         
                         // auto scrolling settings
                         viewModel.isAutoScrollingEnabled = autoScrollingEnabled
@@ -55,12 +65,23 @@ public struct Carousel<Content: View>: View {
                     }
             }
         }
-        .scrollPosition(id: $viewModel.internalScrollPosition)
+        .scrollPosition(id: scrollPosition)
         .scrollDisabled(!viewModel.isDragActive)
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.always)
         .scrollTargetBehavior(.paging)
         .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
+        .onChange(of: pageIndex.wrappedValue, { _, newValue in
+            guard viewModel.subviewsCount != 0 else { return }
+            
+            if let scrollPosition = scrollPosition.wrappedValue,
+               let value = newValue,
+               scrollPosition % viewModel.subviewsCount != value % viewModel.subviewsCount {
+                withAnimation {
+                    self.scrollPosition.wrappedValue = (newValue ?? 0) + viewModel.subviewsCount
+                }
+            }
+        })
         .onChange(of: autoScrollingEnabled) { viewModel.onChangeOfAutoScrolling(isEnable: $1)}
         .onChange(of: autoScrollPauseDuration) { viewModel.onChangeOfAutoScrolling(pauseDuration: $1) }
         .onChange(of: autoScrollDirection) { viewModel.onChangeOfAutoScrolling(direction: $1) }
@@ -68,139 +89,15 @@ public struct Carousel<Content: View>: View {
         .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
 #if DEBUG
         .overlay(alignment: .top) {
-            Text("scrollPosition: \(viewModel.internalScrollPosition ?? -1)")
+            Text("scrollPosition: \(scrollPosition.wrappedValue ?? -1), \ninternal: \(viewModel.scrollPosition ?? -1)")
                 .foregroundStyle(.white)
         }
 #endif
     }
 }
 
-
-@Observable
-@MainActor
-class CarouselViewModel {
-    
-    var subviewsCount = 0
-    var internalScrollPosition: Int?
-    var isDragActive: Bool = true
-    
-    var isAutoScrollingEnabled: Bool = true
-    var isAutoScrollingAllowed: Bool = false
-    var autoScrollPauseDuration: Double = 3
-    var autoScrollDirection: LayoutDirection = .leftToRight
-    var autoScrollTask: Task<(), Never>?
-    
-    var scrollPosition: Int {
-        get {
-            (internalScrollPosition ?? 0) % subviewsCount
-        }
-        set {
-            internalScrollPosition = newValue + subviewsCount
-        }
-    }
-    
-    static func getId(loopIndex: Int, index: Int) -> Int {
-        index + loopIndex * 4
-    }
-    
-    func onScrollPhaseChange( _ newPhase: ScrollPhase) {
-        switch newPhase {
-        case .idle:
-            isDragActive = true
-            isAutoScrollingAllowed = true
-            updateScrollPositionToPerformInfiniteScrolling()
-            
-        case .decelerating:
-            isDragActive = false
-            
-        case .interacting:
-            isAutoScrollingAllowed = false
-            
-        default:
-            break
-        }
-    }
-    
-    private func updateScrollPositionToPerformInfiniteScrolling() {
-        if let internalScrollPosition {
-            if internalScrollPosition < subviewsCount {
-                self.internalScrollPosition = internalScrollPosition + subviewsCount
-            } else if internalScrollPosition >= subviewsCount * 2 {
-                self.internalScrollPosition = internalScrollPosition - subviewsCount
-            }
-        } else {
-            self.internalScrollPosition = subviewsCount
-        }
-    }
-    
-    func onChangeOfAutoScrolling(
-        isEnable: Bool? = nil,
-        isAllowed: Bool? = nil,
-        pauseDuration: Double? = nil,
-        direction: LayoutDirection? = nil
-    ) {
-        if let isEnable {
-            isAutoScrollingEnabled = isEnable
-        }
-        if let isAllowed {
-            isAutoScrollingAllowed = isAllowed
-        }
-        if let pauseDuration {
-            autoScrollPauseDuration = pauseDuration
-        }
-        if let direction {
-            autoScrollDirection = direction
-        }
-        
-        startAutoScrolling()
-    }
-    
-    private func startAutoScrolling() {
-        if isAutoScrollingAllowed && isAutoScrollingEnabled {
-            if let autoScrollTask, !autoScrollTask.isCancelled {
-                return
-            }
-            
-            autoScrollTask = Task(priority: .high, operation: autoScroll)
-        } else {
-            autoScrollTask?.cancel()
-        }
-    }
-    
-    private func autoScroll() async {
-        while true {
-            try? await Task.sleep(for: .seconds(autoScrollPauseDuration))
-            
-            if Task.isCancelled {
-                return
-            }
-            
-            withAnimation {
-                if autoScrollDirection == .leftToRight {
-                    self.internalScrollPosition = (internalScrollPosition ?? subviewsCount - 1) + 1
-                } else {
-                    self.internalScrollPosition = (internalScrollPosition ?? subviewsCount + 1) - 1
-                }
-            }
-        }
-    }
-    
-    func onChangeOfScenePhase(_ newPhase: ScenePhase) {
-        switch newPhase {
-        case .active:
-            startAutoScrolling()
-            
-        case .inactive, .background:
-            autoScrollTask?.cancel()
-            
-        @unknown default:
-            break
-        }
-    }
-}
-
 #Preview {
-//        @Previewable @State var scrollPosition: Int?
+    @Previewable @State var pageIndex: Int?
     @Previewable @State var autoScrollingEnabled: Bool = false
     @Previewable @State var rightToLeft: Bool = false
     @Previewable @State var autoScrollPauseDuration: Double = 3
@@ -232,12 +129,16 @@ class CarouselViewModel {
                     .padding(.horizontal, widthDiff / 2)
             }
         }
+        .pageIndex($pageIndex)
         .autoScrollingEnabled(autoScrollingEnabled)
         .autoScrollPauseDuration(autoScrollPauseDuration)
         .autoScrollDirection(rightToLeft ? .rightToLeft : .leftToRight)
         .frame(width: 300)
         .background {
             RoundedRectangle(cornerRadius: 25)
+        }
+        .overlay(alignment: .bottom) {
+            DotsIndicator(scrollPosition: $pageIndex, itemsCount: colors.count)
         }
     }
 }
