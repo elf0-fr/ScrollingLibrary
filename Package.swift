@@ -7,6 +7,7 @@ let package = Package(
     name: "ScrollingLibrary",
     platforms: [
         .iOS(.v18),
+        .visionOS(.v2)
 //        .macOS(.v15) // WIP
     ],
     products: [

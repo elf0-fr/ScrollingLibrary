@@ -40,7 +40,6 @@ struct CarouselPreview<Content: View>: View {
 }
 
 #Preview("0, 1 or 2 elements") {
-    
     VStack {
         // If there is no element then the scrollView is not visible
         CarouselPreview(itemsCount: 0) {
@@ -55,7 +54,7 @@ struct CarouselPreview<Content: View>: View {
         CarouselPreview(itemsCount: 1) {
             Carousel {
                 Color.red
-                    .frame(width: UIScreen.main.bounds.width, height: 100)
+                    .frame(height: 100)
             }
         }
         
@@ -68,7 +67,7 @@ struct CarouselPreview<Content: View>: View {
                     Color.red
                     Color.blue
                 }
-                .frame(width: UIScreen.main.bounds.width, height: 100)
+                .frame(height: 100)
             }
         }
     }
@@ -89,7 +88,7 @@ struct TestModel: Identifiable {
                     Color.red
                     Color.blue
                 }
-                .frame(width: UIScreen.main.bounds.width, height: 100)
+                .frame(height: 100)
             }
         }
         .padding(.bottom, 50)
@@ -99,11 +98,11 @@ struct TestModel: Identifiable {
             let colors = [Color.blue, Color.green]
             Carousel {
                 Color.red
-                    .frame(width: UIScreen.main.bounds.width, height: 100)
+                    .frame(height: 100)
                 
                 ForEach(colors.indices, id: \.self) { index in
                     colors[index]
-                        .frame(width: UIScreen.main.bounds.width, height: 100)
+                        .frame(height: 100)
                 }
             }
         }
@@ -114,7 +113,7 @@ struct TestModel: Identifiable {
             let colors = [Color.red, Color.blue, Color.green]
             Carousel(colors.indices, id: \.self) { index in
                 colors[index]
-                .frame(width: UIScreen.main.bounds.width, height: 100)
+                .frame(height: 100)
             }
         }
         .padding(.bottom, 50)
@@ -124,7 +123,7 @@ struct TestModel: Identifiable {
             let colors = [Color.red, Color.blue, Color.green, Color.yellow]
             Carousel(colors, id: \.self) { color in
                 color
-                    .frame(width: UIScreen.main.bounds.width, height: 100)
+                    .frame(height: 100)
             }
         }
         .padding(.bottom, 50)
@@ -140,7 +139,7 @@ struct TestModel: Identifiable {
             ]
             Carousel(colors) { color in
                 color.color
-                    .frame(width: UIScreen.main.bounds.width, height: 100)
+                    .frame(height: 100)
             }
         }
     }
@@ -149,41 +148,74 @@ struct TestModel: Identifiable {
 #Preview("Constrain width") {
     let colors = [Color.red, Color.blue, Color.green, Color.yellow]
     
-    CarouselPreview(itemsCount: colors.count) {
-        
-        let carouselWidth: CGFloat = 300
-        let with: CGFloat = 200
-        let widthDiff: CGFloat = carouselWidth - with
-        Carousel(colors, id: \.self) { color in
-            color
-                .frame(width: with, height: 250)
-                .padding(.horizontal, widthDiff / 2)
+    ScrollView {
+        Text("Constraint scrollView but full width item").font(.title2)
+        CarouselPreview(itemsCount: colors.count) {
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(height: 100)
+            }
+            .frame(width: 200)
+            .background(.black)
+            .border(.yellow)
         }
-        .frame(width: carouselWidth)
-        .background(.black)
-        .border(.yellow)
+        .padding(.bottom, 50)
         
+        Text("Full width scrollView but constraint item").font(.title2)
+        CarouselPreview(itemsCount: 4) {
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(width: 200, height: 100)
+            }
+            .background(.black)
+            .border(.yellow)
+        }
+        .padding(.bottom, 50)
+        
+        Text("Padding").font(.title2)
+        CarouselPreview(itemsCount: colors.count) {
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(height: 100)
+                    .padding(.horizontal, 50)
+            }
+            .background(.black)
+            .border(.yellow)
+        }
     }
 }
 
-// TODO: add style
-#Preview {
-    let colors = [Color.red, Color.blue, Color.green, Color.yellow]
-    
-    CarouselPreview(itemsCount: colors.count) {
-        let carouselWidth: CGFloat = UIScreen.main.bounds.width
-        let with: CGFloat = 250
-        let widthDiff: CGFloat = carouselWidth - with
-        Carousel {
-            ForEach(colors.indices, id: \.self) { index in
-                ZStack {
-                    colors[index]
-                    Text("Index: \(index)")
-                        .foregroundStyle(.white)
-                }
-                .frame(width: with, height: 350)
-                .padding(.horizontal, widthDiff / 2)
+#if os(visionOS)
+#Preview("visionOS", windowStyle: .automatic) {
+        CarouselPreview(itemsCount: 4) {
+            let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(height: 100)
             }
+            .border(.black)
         }
-    }
 }
+#endif
+
+// TODO: add style
+//#Preview {
+//    let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+//    
+//    CarouselPreview(itemsCount: colors.count) {
+//        let carouselWidth: CGFloat = UIScreen.main.bounds.width
+//        let with: CGFloat = 250
+//        let widthDiff: CGFloat = carouselWidth - with
+//        Carousel {
+//            ForEach(colors.indices, id: \.self) { index in
+//                ZStack {
+//                    colors[index]
+//                    Text("Index: \(index)")
+//                        .foregroundStyle(.white)
+//                }
+//                .frame(width: with, height: 350)
+//                .padding(.horizontal, widthDiff / 2)
+//            }
+//        }
+//    }
+//}

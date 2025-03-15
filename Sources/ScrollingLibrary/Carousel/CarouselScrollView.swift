@@ -20,6 +20,7 @@ struct CarouselScrollView<Content: View>: View {
                     Group(subviews: content) { subviews in
                         ForEach(subviews.indices, id: \.self) { index in
                             subviews[index]
+                                .containerRelativeFrame(.horizontal)
                                 .id(viewModel.getId(loopIndex: loopIndex, index: index))
                         }
                     }
