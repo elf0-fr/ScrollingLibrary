@@ -39,23 +39,51 @@ struct CarouselPreview<Content: View>: View {
     }
 }
 
-#Preview("Edge to edge") {
-    let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+#Preview("Init") {
     
-    CarouselPreview(itemsCount: colors.count) {
-        
-        Carousel {
-            ForEach(colors.indices, id: \.self) { index in
-                ZStack {
-                    colors[index]
-                    Text("Index: \(index)")
-                        .font(.title)
-                        .foregroundStyle(.white)
-                }
-                .frame(width: UIScreen.main.bounds.width, height: 350)
+    ScrollView {
+        // If there is no element then the scrollView is not visible
+        CarouselPreview(itemsCount: 0) {
+            Carousel {
+                
             }
         }
         
+        // If there is one element then the scrolling is disable
+        CarouselPreview(itemsCount: 1) {
+            Carousel {
+                Group {
+                    Color.red
+                }
+                .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
+        
+        CarouselPreview(itemsCount: 2) {
+            Carousel {
+                Group {
+                    Color.red
+                    Color.blue
+                }
+                .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
+        
+        CarouselPreview(itemsCount: 3) {
+            let colors = [Color.red, Color.blue, Color.green]
+            Carousel(colors.indices, id: \.self) { index in
+                colors[index]
+                .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
+        
+        CarouselPreview(itemsCount: 4) {
+            let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
     }
 }
 
@@ -67,16 +95,10 @@ struct CarouselPreview<Content: View>: View {
         let carouselWidth: CGFloat = 300
         let with: CGFloat = 200
         let widthDiff: CGFloat = carouselWidth - with
-        Carousel {
-            ForEach(colors.indices, id: \.self) { index in
-                ZStack {
-                    colors[index]
-                    Text("Index: \(index)")
-                        .foregroundStyle(.white)
-                }
+        Carousel(colors, id: \.self) { color in
+            color
                 .frame(width: with, height: 250)
                 .padding(.horizontal, widthDiff / 2)
-            }
         }
         .frame(width: carouselWidth)
         .background(.black)

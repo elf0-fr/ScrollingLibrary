@@ -55,6 +55,7 @@ public struct Carousel<Content: View>: View {
                     }
             }
         }
+        .scrollDisabled(viewModel.subviewsCount <= 1)
         .scrollPosition(id: scrollPosition)
         .scrollDisabled(!viewModel.isDragActive)
         .scrollIndicators(.hidden)
@@ -79,9 +80,29 @@ public struct Carousel<Content: View>: View {
         .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
 #if DEBUG
         .overlay(alignment: .top) {
-            Text("scrollPosition: \(scrollPosition.wrappedValue ?? -1), \ninternal: \(viewModel.scrollPosition ?? -1)")
-                .foregroundStyle(.white)
+            VStack {
+                Text("scrollPosition: \(scrollPosition.wrappedValue ?? -1)")
+                Text("Internal scrollPosition: \(viewModel.scrollPosition ?? -1)")
+                Text("PageIndex: \(pageIndex.wrappedValue ?? -1)")
+            }
+            .foregroundStyle(.white)
         }
 #endif
     }
+}
+
+extension Carousel {
+    public init<Data: RandomAccessCollection, ID: Hashable, Content2: View>(
+        _ data: Data,
+        id: KeyPath<Data.Element, ID>,
+        @ViewBuilder content: @escaping (Data.Element) -> Content2
+    ) where Content == ForEach<Data, ID, Content2> {
+        self.content = ForEach(data, id: id) { content($0) }
+    }
+}
+
+// This preview is there so that swiftUI context menu action are visible.
+// To play with carousel previews see: CarouselPreviews file.
+#Preview {
+    Text("Hello, World!")
 }
