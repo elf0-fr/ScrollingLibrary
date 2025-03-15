@@ -39,9 +39,9 @@ struct CarouselPreview<Content: View>: View {
     }
 }
 
-#Preview("Init") {
+#Preview("0, 1 or 2 elements") {
     
-    ScrollView {
+    VStack {
         // If there is no element then the scrollView is not visible
         CarouselPreview(itemsCount: 0) {
             Carousel {
@@ -49,16 +49,19 @@ struct CarouselPreview<Content: View>: View {
             }
         }
         
+        Divider()
+        
         // If there is one element then the scrolling is disable
         CarouselPreview(itemsCount: 1) {
             Carousel {
-                Group {
-                    Color.red
-                }
-                .frame(width: UIScreen.main.bounds.width, height: 100)
+                Color.red
+                    .frame(width: UIScreen.main.bounds.width, height: 100)
             }
         }
         
+        Divider()
+        
+        // If there is more than 1 element then it is the default behaviour.
         CarouselPreview(itemsCount: 2) {
             Carousel {
                 Group {
@@ -68,7 +71,45 @@ struct CarouselPreview<Content: View>: View {
                 .frame(width: UIScreen.main.bounds.width, height: 100)
             }
         }
+    }
+}
+
+struct TestModel: Identifiable {
+    let id = UUID()
+    let color: Color
+}
+
+#Preview("Init") {
+    
+    ScrollView {
+        Text("Default init").font(.title2)
+        CarouselPreview(itemsCount: 2) {
+            Carousel {
+                Group {
+                    Color.red
+                    Color.blue
+                }
+                .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
+        .padding(.bottom, 50)
         
+        Text("Default init with a combination of view and forEach").font(.title2)
+        CarouselPreview(itemsCount: 3) {
+            let colors = [Color.blue, Color.green]
+            Carousel {
+                Color.red
+                    .frame(width: UIScreen.main.bounds.width, height: 100)
+                
+                ForEach(colors.indices, id: \.self) { index in
+                    colors[index]
+                        .frame(width: UIScreen.main.bounds.width, height: 100)
+                }
+            }
+        }
+        .padding(.bottom, 50)
+        
+        Text("ForEach Data, ID init style with indexes").font(.title2)
         CarouselPreview(itemsCount: 3) {
             let colors = [Color.red, Color.blue, Color.green]
             Carousel(colors.indices, id: \.self) { index in
@@ -76,11 +117,29 @@ struct CarouselPreview<Content: View>: View {
                 .frame(width: UIScreen.main.bounds.width, height: 100)
             }
         }
+        .padding(.bottom, 50)
         
+        Text("ForEach Data, ID init style with value").font(.title2)
         CarouselPreview(itemsCount: 4) {
             let colors = [Color.red, Color.blue, Color.green, Color.yellow]
             Carousel(colors, id: \.self) { color in
                 color
+                    .frame(width: UIScreen.main.bounds.width, height: 100)
+            }
+        }
+        .padding(.bottom, 50)
+        
+        Text("ForEach Data, init style").font(.title2)
+        CarouselPreview(itemsCount: 5) {
+            let colors = [
+                TestModel(color: Color.red),
+                TestModel(color: Color.blue),
+                TestModel(color: Color.green),
+                TestModel(color: Color.yellow),
+                TestModel(color: Color.orange),
+            ]
+            Carousel(colors) { color in
+                color.color
                     .frame(width: UIScreen.main.bounds.width, height: 100)
             }
         }

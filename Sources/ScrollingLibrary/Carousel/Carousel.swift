@@ -102,6 +102,15 @@ extension Carousel {
     }
 }
 
+extension Carousel {
+    public init<Data: RandomAccessCollection, ID: Hashable, Content2: View>(
+        _ data: Data,
+        @ViewBuilder content: @escaping (Data.Element) -> Content2
+    ) where Content == ForEach<Data, ID, Content2>, Data.Element: Identifiable, ID == Data.Element.ID {
+        self.content = ForEach(data, id: \.id) { content($0) }
+    }
+}
+
 // This preview is there so that swiftUI context menu action are visible.
 // To play with carousel previews see: CarouselPreviews file.
 #Preview {
