@@ -33,18 +33,8 @@ public struct Carousel<Content: View>: View {
     }
     
     public var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 0) {
-                ForEach(0...2, id: \.self) { loopIndex in
-                    Group(subviews: content) { subviews in
-                        ForEach(subviews.indices, id: \.self) { index in
-                            subviews[index]
-                                .id(CarouselViewModel.getId(loopIndex: loopIndex, index: index))
-                        }
-                    }
-                }
-            }
-            .scrollTargetLayout()
+        CarouselScrollView {
+            content
         }
         .background {
             Group(subviews: content) { subviews in
@@ -93,52 +83,5 @@ public struct Carousel<Content: View>: View {
                 .foregroundStyle(.white)
         }
 #endif
-    }
-}
-
-#Preview {
-    @Previewable @State var pageIndex: Int?
-    @Previewable @State var autoScrollingEnabled: Bool = false
-    @Previewable @State var rightToLeft: Bool = false
-    @Previewable @State var autoScrollPauseDuration: Double = 3
-    
-    let colors = [Color.red, Color.blue, Color.green, Color.yellow]
-    
-    VStack {
-        GroupBox {
-            Toggle("Enable auto scrolling", isOn: $autoScrollingEnabled)
-            Toggle("\(rightToLeft ? "Right to Left" : "Left to Right")", isOn: $rightToLeft)
-            Stepper("Pause Duration: \(autoScrollPauseDuration.formatted())", value: $autoScrollPauseDuration, in: 1...5)
-        }
-        
-        Carousel {
-            let with: CGFloat = 250
-            let height: CGFloat = 350
-            let widthDiff: CGFloat = 300 - with
-            
-            ForEach(colors.indices, id: \.self) { index in
-                let color = colors[index]
-                
-                Text("\(color)\nindex: \(index)")
-                    .foregroundStyle(.white)
-                    .frame(width: with, height: height)
-                    .background {
-                        RoundedRectangle(cornerRadius: 25)
-                            .fill(color)
-                    }
-                    .padding(.horizontal, widthDiff / 2)
-            }
-        }
-        .pageIndex($pageIndex)
-        .autoScrollingEnabled(autoScrollingEnabled)
-        .autoScrollPauseDuration(autoScrollPauseDuration)
-        .autoScrollDirection(rightToLeft ? .rightToLeft : .leftToRight)
-        .frame(width: 300)
-        .background {
-            RoundedRectangle(cornerRadius: 25)
-        }
-        .overlay(alignment: .bottom) {
-            DotsIndicator(scrollPosition: $pageIndex, itemsCount: colors.count)
-        }
     }
 }
