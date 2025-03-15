@@ -28,8 +28,8 @@ class CarouselViewModel {
         scrollPosition = position
     }
     
-    static func getId(loopIndex: Int, index: Int) -> Int {
-        index + loopIndex * 4
+    func getId(loopIndex: Int, index: Int) -> Int {
+        index + loopIndex * subviewsCount
     }
     
     func onScrollPhaseChange( _ newPhase: ScrollPhase) {

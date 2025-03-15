@@ -36,6 +36,7 @@ public struct Carousel<Content: View>: View {
         CarouselScrollView {
             content
         }
+        .environment(viewModel)
         .background {
             Group(subviews: content) { subviews in
                 Color.clear

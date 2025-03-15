@@ -33,10 +33,19 @@ struct AutoScrolling: CustomTestStringConvertible {
 @MainActor struct CarouselViewModelTests {
     let viewModel = CarouselViewModel()
         
-    @Test("Id of a subview") func getId() {
-        #expect(CarouselViewModel.getId(loopIndex: 0, index: 1) == 1)
-        #expect(CarouselViewModel.getId(loopIndex: 1, index: 2) == 6)
-        #expect(CarouselViewModel.getId(loopIndex: 2, index: 3) == 11)
+    @Test("Id of a subview", arguments: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    func getId(subviewsCount: Int) {
+        viewModel.subviewsCount = subviewsCount
+        
+        var previousId: Int = -1
+        var currentId: Int
+        for loopIndex in 0...2 {
+            for index in 0..<viewModel.subviewsCount {
+                currentId = viewModel.getId(loopIndex: loopIndex, index: index)
+                #expect(currentId == previousId + 1)
+                previousId = currentId
+            }
+        }
     }
     
     @Test("Set the scroll position", arguments: zip([
