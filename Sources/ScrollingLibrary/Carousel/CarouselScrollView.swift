@@ -28,5 +28,6 @@ struct CarouselScrollView<Content: View>: View {
             }
             .scrollTargetLayout()
         }
+        .scrollIndicators(.never, axes: .horizontal)
     }
 }

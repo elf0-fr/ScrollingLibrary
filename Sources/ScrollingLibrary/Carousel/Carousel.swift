@@ -59,7 +59,6 @@ public struct Carousel<Content: View>: View {
         .scrollDisabled(viewModel.subviewsCount <= 1)
         .scrollPosition(id: scrollPosition)
         .scrollDisabled(!viewModel.isDragActive)
-        .scrollIndicators(.hidden)
         .scrollBounceBehavior(.always)
         .scrollTargetBehavior(.paging)
         .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
