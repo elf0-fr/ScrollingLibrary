@@ -73,7 +73,6 @@ class CarouselViewModel {
         switch newPhase {
         case .idle:
             isScrollingAllowed = true
-            isAutoScrollingAllowed = true
             updateScrollPositionToPerformInfiniteScrolling()
             startAutoScrolling()
             
@@ -81,7 +80,7 @@ class CarouselViewModel {
             isScrollingAllowed = false
             
         case .interacting:
-            isAutoScrollingAllowed = false
+            autoScrollTask?.cancel()
             
         default:
             break
@@ -105,10 +104,6 @@ class CarouselViewModel {
     @ObservationIgnored var isAutoScrollingEnabled: Bool = true
     @ObservationIgnored var autoScrollPauseDuration: Double = 3
     @ObservationIgnored var autoScrollDirection: LayoutDirection = .leftToRight
-    @ObservationIgnored var isAutoScrollingAllowed: Bool = false
-    @ObservationIgnored var isAutoScrollDisabled: Bool {
-        !isAutoScrollingAllowed || !isAutoScrollingEnabled
-    }
     @ObservationIgnored var autoScrollTask: Task<(), Never>?
     
     func onChangeOfAutoScrolling(
@@ -130,9 +125,8 @@ class CarouselViewModel {
     }
     
     private func startAutoScrolling() {
-        if isAutoScrollDisabled {
+        guard isAutoScrollingEnabled else {
             autoScrollTask?.cancel()
-            print("cancel")
             return
         }
         
@@ -140,7 +134,6 @@ class CarouselViewModel {
             return
         }
         
-        print("Start task")
         autoScrollTask = Task(priority: .high, operation: autoScroll)
     }
     
@@ -151,7 +144,6 @@ class CarouselViewModel {
             if Task.isCancelled {
                 return
             }
-            print("auto scroll")
             
             withAnimation {
                 if autoScrollDirection == .leftToRight {
@@ -172,7 +164,6 @@ class CarouselViewModel {
             
         case .inactive, .background:
             autoScrollTask?.cancel()
-            print("cancel 2")
             
         @unknown default:
             break
