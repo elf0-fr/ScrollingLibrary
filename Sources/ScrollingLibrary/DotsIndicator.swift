@@ -29,6 +29,7 @@ public struct DotsIndicator: View {
                         .frame(width: 15)
                         .padding(5)
                 }
+                .buttonStyle(.borderless)
             }
         }
     }
