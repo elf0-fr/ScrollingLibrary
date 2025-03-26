@@ -50,6 +50,8 @@ public struct Carousel<Content: View>: View {
             guard let scrollPosition = scrollPosition.wrappedValue else { return }
             guard scrollPosition % subviewCount != newValue % subviewCount else { return }
             
+            viewModel.autoScrollTask?.cancel()
+            
             withAnimation {
                 self.scrollPosition.wrappedValue = newValue + subviewCount
             }
