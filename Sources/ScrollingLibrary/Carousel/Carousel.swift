@@ -23,8 +23,9 @@ public struct Carousel<Content: View>: View {
     private var scrollPosition: Binding<Int?> {
         Binding {
             viewModel.scrollPosition
-        } set: { newValue in
-            viewModel.setScrollPosition(newValue, pageIndex: pageIndex)
+        } set: {
+            pageIndex.wrappedValue = viewModel.getSubviewScrollPosition(position: $0)
+            viewModel.scrollPosition = $0
         }
     }
 
@@ -37,46 +38,27 @@ public struct Carousel<Content: View>: View {
             content
         }
         .environment(viewModel)
-        .background {
-            Group(subviews: content) { subviews in
-                Color.clear
-                    .onAppear {
-                        // Get the subviews count.
-                        viewModel.subviewsCount = subviews.count
-                        
-                        // start at the first item of the second loop.
-                        scrollPosition.wrappedValue = (pageIndex.wrappedValue ?? 0) + viewModel.subviewsCount
-                        
-                        // auto scrolling settings
-                        viewModel.isAutoScrollingEnabled = autoScrollingEnabled
-                        viewModel.autoScrollPauseDuration = autoScrollPauseDuration
-                    }
-                    .onDisappear {
-                        viewModel.autoScrollTask?.cancel()
-                    }
+        
+        .onAppear {
+            scrollPosition.wrappedValue = (pageIndex.wrappedValue ?? 0) + viewModel.subviewCount
+        }
+        .scrollPosition(id: scrollPosition)
+        .onChange(of: pageIndex.wrappedValue) {
+            let subviewCount = viewModel.subviewCount
+            guard subviewCount != 0 else { return }
+            guard let newValue = $1 else { return }
+            guard let scrollPosition = scrollPosition.wrappedValue else { return }
+            guard scrollPosition % subviewCount != newValue % subviewCount else { return }
+            
+            withAnimation {
+                self.scrollPosition.wrappedValue = newValue + subviewCount
             }
         }
-        .scrollDisabled(viewModel.subviewsCount <= 1)
-        .scrollPosition(id: scrollPosition)
-        .scrollDisabled(!viewModel.isDragActive)
-        .scrollBounceBehavior(.always)
-        .scrollTargetBehavior(.paging)
-        .onScrollPhaseChange { viewModel.onScrollPhaseChange($1) }
-        .onChange(of: pageIndex.wrappedValue, { _, newValue in
-            guard viewModel.subviewsCount != 0 else { return }
-            
-            if let scrollPosition = scrollPosition.wrappedValue,
-               let value = newValue,
-               scrollPosition % viewModel.subviewsCount != value % viewModel.subviewsCount {
-                withAnimation {
-                    self.scrollPosition.wrappedValue = (newValue ?? 0) + viewModel.subviewsCount
-                }
-            }
-        })
-        .onChange(of: autoScrollingEnabled) { viewModel.onChangeOfAutoScrolling(isEnable: $1)}
-        .onChange(of: autoScrollPauseDuration) { viewModel.onChangeOfAutoScrolling(pauseDuration: $1) }
-        .onChange(of: autoScrollDirection) { viewModel.onChangeOfAutoScrolling(direction: $1) }
-        .onChange(of: viewModel.isAutoScrollingAllowed) { viewModel.onChangeOfAutoScrolling(isAllowed: $1) }
+        
+        .onChange(of: autoScrollingEnabled, initial: true) { viewModel.onChangeOfAutoScrolling(isEnable: $1)}
+        .onChange(of: autoScrollPauseDuration, initial: true) { viewModel.onChangeOfAutoScrolling(pauseDuration: $1) }
+        .onChange(of: autoScrollDirection, initial: true) { viewModel.onChangeOfAutoScrolling(direction: $1) }
+        
         .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
 #if DEBUG
         .overlay(alignment: .top) {
@@ -97,7 +79,9 @@ extension Carousel {
         id: KeyPath<Data.Element, ID>,
         @ViewBuilder content: @escaping (Data.Element) -> Content2
     ) where Content == ForEach<Data, ID, Content2> {
-        self.content = ForEach(data, id: id) { content($0) }
+        self.init {
+            ForEach(data, id: id) { content($0) }
+        }
     }
 }
 
@@ -106,7 +90,9 @@ extension Carousel {
         _ data: Data,
         @ViewBuilder content: @escaping (Data.Element) -> Content2
     ) where Content == ForEach<Data, ID, Content2>, Data.Element: Identifiable, ID == Data.Element.ID {
-        self.content = ForEach(data, id: \.id) { content($0) }
+        self.init {
+            ForEach(data, id: \.id) { content($0) }
+        }
     }
 }
 

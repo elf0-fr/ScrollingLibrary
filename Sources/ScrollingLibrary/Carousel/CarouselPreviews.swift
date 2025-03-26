@@ -12,7 +12,7 @@ struct CarouselPreview<Content: View>: View {
     @ViewBuilder var content: Content
     
     @State private var pageIndex: Int?
-    @State private var autoScrollingEnabled: Bool = false
+    @State private var autoScrollingEnabled: Bool = true
     @State private var rightToLeft: Bool = false
     @State private var autoScrollPauseDuration: Double = 3
     
@@ -187,6 +187,17 @@ struct TestModel: Identifiable {
 
 #if os(visionOS)
 #Preview("visionOS", windowStyle: .automatic) {
+        CarouselPreview(itemsCount: 4) {
+            let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+            Carousel(colors, id: \.self) { color in
+                color
+                    .frame(height: 100)
+            }
+            .border(.black)
+        }
+}
+#else
+#Preview("Simple") {
         CarouselPreview(itemsCount: 4) {
             let colors = [Color.red, Color.blue, Color.green, Color.yellow]
             Carousel(colors, id: \.self) { color in
