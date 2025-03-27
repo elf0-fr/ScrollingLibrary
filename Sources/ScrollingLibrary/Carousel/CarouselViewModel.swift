@@ -65,9 +65,6 @@ class CarouselViewModel {
     }
     
     var isScrollingAllowed: Bool = true
-    var isScrollDisabled: Bool {
-        subviewCount <= 1 || !isScrollingAllowed
-    }
     
     func onScrollPhaseChange( _ newPhase: ScrollPhase) {
         switch newPhase {

@@ -106,7 +106,6 @@ struct AutoScrolling: CustomTestStringConvertible {
             viewModel.onScrollPhaseChange(.decelerating)
             
             #expect(!viewModel.isScrollingAllowed)
-            #expect(viewModel.isScrollDisabled)
         }
         
         @Test("Scroll phase change to interacting", arguments: [

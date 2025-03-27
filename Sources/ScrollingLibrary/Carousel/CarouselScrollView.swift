@@ -9,10 +9,12 @@ import SwiftUI
 
 struct CarouselScrollView<Content: View>: View {
     
-    @ViewBuilder var content: Content
-    
     @Environment(CarouselViewModel.self) private var viewModel
     @Environment(\.carouselStyle) private var style
+    
+    @Binding var scrollPosition: Int?
+    
+    @ViewBuilder var content: Content
     
     var body: some View {
         Group(subviews: content) { subviews in
@@ -42,7 +44,8 @@ struct CarouselScrollView<Content: View>: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollDisabled(viewModel.isScrollDisabled)
+            .scrollPosition(id: $scrollPosition)
+            .scrollDisabled(subviewCount <= 1 || !viewModel.isScrollingAllowed)
             .scrollIndicators(.never, axes: .horizontal)
             .scrollBounceBehavior(.always)
             .scrollTargetBehavior(.paging)
@@ -50,6 +53,7 @@ struct CarouselScrollView<Content: View>: View {
             
             .onChange(of: subviewCount, initial: true) {
                 viewModel.subviewCount = $1
+                // TODO: compute new scroll position
             }
         }
         .onDisappear {

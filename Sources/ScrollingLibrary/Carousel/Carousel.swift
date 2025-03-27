@@ -34,7 +34,7 @@ public struct Carousel<Content: View>: View {
     }
     
     public var body: some View {
-        CarouselScrollView {
+        CarouselScrollView(scrollPosition: scrollPosition) {
             content
         }
         .environment(viewModel)
@@ -42,7 +42,6 @@ public struct Carousel<Content: View>: View {
         .onAppear {
             scrollPosition.wrappedValue = (pageIndex.wrappedValue ?? 0) + viewModel.subviewCount
         }
-        .scrollPosition(id: scrollPosition)
         .onChange(of: pageIndex.wrappedValue) {
             let subviewCount = viewModel.subviewCount
             guard subviewCount != 0 else { return }
