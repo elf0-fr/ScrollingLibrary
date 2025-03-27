@@ -47,6 +47,30 @@ struct AutoScrolling: CustomTestStringConvertible {
         #expect(CarouselViewModel.getSubviewIndex(fromItemIndex: 1, subviewCount: 4) == 1)
     }
     
+    @Test("Index of an item") func getItemIndex() {
+        #expect(
+            CarouselViewModel.getItemIndex(fromSubviewIndex: 0, subviewCount: 0) == 0,
+            "Edge case where subviewCount is 0"
+        )
+        #expect(
+            CarouselViewModel.getItemIndex(fromSubviewIndex: 5, subviewCount: 0) == 0,
+            "Edge case where subviewCount is 0"
+        )
+        #expect(
+            CarouselViewModel.getItemIndex(fromSubviewIndex: 0, subviewCount: 5) == 5,
+            "Edge case where subview index is 0"
+        )
+        #expect(
+            CarouselViewModel.getItemIndex(fromSubviewIndex: 5, subviewCount: 5) == 5,
+            "Edge case where subview index equal subviewCount"
+        )
+        #expect(
+            CarouselViewModel.getItemIndex(fromSubviewIndex: 4, subviewCount: 5) == 9,
+            "Edge case where subview index equals subviewCount - 1"
+        )
+        #expect(CarouselViewModel.getItemIndex(fromSubviewIndex: 3, subviewCount: 6) == 9)
+    }
+    
     @Test("Indices of items") func getItemIndices() {
         #expect(CarouselViewModel.getItemIndices(subviewCount: 1) == 0..<3)
         #expect(CarouselViewModel.getItemIndices(subviewCount: 2) == 0..<6)

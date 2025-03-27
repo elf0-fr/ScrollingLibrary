@@ -53,7 +53,8 @@ struct CarouselScrollView<Content: View>: View {
             
             .onChange(of: subviewCount, initial: true) {
                 viewModel.subviewCount = $1
-                // TODO: compute new scroll position
+                let subviewIndex = CarouselViewModel.getSubviewIndex(fromItemIndex: scrollPosition ?? 0, subviewCount: $0)
+                scrollPosition = CarouselViewModel.getItemIndex(fromSubviewIndex: subviewIndex, subviewCount: $1)
             }
         }
         .onDisappear {

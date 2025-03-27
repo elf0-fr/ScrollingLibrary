@@ -31,6 +31,17 @@ class CarouselViewModel {
         guard subviewCount > 0 else { return 0 }
         return itemIndex % subviewCount
     }
+    /// Return the index of an item in the scroll view  from the index of its corresponding content's subview.
+    ///
+    /// - Parameters:
+    ///   - subviewIndex: The index of the corresponding content's subview.
+    ///   - subviewCount: The number of subviews.
+    /// - Returns: The index of the item.
+    static func getItemIndex(fromSubviewIndex subviewIndex: Int, subviewCount: Int) -> Int {
+        guard subviewIndex >= 0 && subviewIndex < subviewCount else { return subviewCount }
+        
+        return subviewCount + subviewIndex
+    }
     /// The indices that are valid for subscripting the collection of items, in ascending order.
     ///
     /// - Parameters:
