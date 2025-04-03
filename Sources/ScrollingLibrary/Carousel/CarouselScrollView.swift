@@ -37,6 +37,7 @@ struct CarouselScrollView<Content: View>: View {
                                 index: subviewIndex,
                                 label: CarouselConfiguration.Label {
                                     subviews[subviewIndex]
+                                        .accessibilityIdentifier("carouselElement_\(index)")
                                         .id(index)
                                 })
                         )

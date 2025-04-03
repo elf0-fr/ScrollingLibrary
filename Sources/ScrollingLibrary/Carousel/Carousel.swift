@@ -37,6 +37,7 @@ public struct Carousel<Content: View>: View {
         CarouselScrollView(scrollPosition: scrollPosition) {
             content
         }
+        .accessibilityIdentifier("carousel")
         .environment(viewModel)
         
         .onAppear {
@@ -61,16 +62,6 @@ public struct Carousel<Content: View>: View {
         .onChange(of: autoScrollDirection, initial: true) { viewModel.onChangeOfAutoScrolling(direction: $1) }
         
         .onChange(of: scenePhase) { viewModel.onChangeOfScenePhase($1) }
-#if DEBUG
-        .overlay(alignment: .top) {
-            VStack {
-                Text("scrollPosition: \(scrollPosition.wrappedValue ?? -1)")
-                Text("Internal scrollPosition: \(viewModel.scrollPosition ?? -1)")
-                Text("PageIndex: \(pageIndex.wrappedValue ?? -1)")
-            }
-            .foregroundStyle(.white)
-        }
-#endif
     }
 }
 
